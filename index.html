@@ -3,79 +3,578 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>2030 맞춤 AI 사주 리포트</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>2030 맞춤 AI 정통 사주 & 궁합 리포트</title>
+  <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 620px; margin: 20px auto; padding: 15px; background-color: #f4f6f8; line-height: 1.6; }
+    .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+    h2 { text-align: center; margin-bottom: 5px; font-size: 22px; color: #1e293b; }
+    .subtitle { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 20px; }
+    label { font-weight: bold; display: block; margin-top: 15px; font-size: 14px; color: #334155; }
+    input, select, textarea { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; background-color: #ffffff; }
+    
+    .package-group { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .package-card { border: 2px solid #e2e8f0; padding: 14px 16px; border-radius: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease; background-color: #ffffff; }
+    .package-card:hover { border-color: #818cf8; }
+    .package-card.selected { border-color: #4f46e5; background-color: #eef2ff; }
+    
+    .package-info { display: flex; flex-direction: column; }
+    .package-title { font-weight: bold; font-size: 15px; color: #1e293b; }
+    .package-desc { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .package-price { font-weight: bold; font-size: 16px; color: #4f46e5; white-space: nowrap; }
+    
+    .upsell-badge { background: #fee2e2; color: #ef4444; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+    
+    .partner-section { display: none; margin-top: 20px; padding: 18px; background-color: #fff1f2; border: 1.5px dashed #f43f5e; border-radius: 12px; }
+    .partner-title { font-weight: bold; color: #e11d48; font-size: 15px; margin-bottom: 5px; }
+    
+    .btn-main { width: 100%; padding: 16px; background-color: #4f46e5; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 22px; }
+    .btn-main:hover { background-color: #4338ca; }
+    .btn-main:disabled { background-color: #94a3b8; cursor: not-allowed; }
+    
+    .saju-table-wrap { margin-top: 25px; border-radius: 12px; overflow: hidden; border: 1px solid #cbd5e1; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .saju-header { background: #4f46e5; color: white; text-align: center; padding: 12px; font-weight: bold; font-size: 15px; }
+    .saju-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: center; font-size: 14px; }
+    .saju-table th { width: 20%; background: #f8fafc; padding: 10px 4px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #e2e8f0; color: #475569; font-weight: 600; }
+    .saju-table th:last-child { border-right: none; }
+    .saju-table td { width: 20%; padding: 12px 4px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; text-align: center; vertical-align: middle; }
+    .saju-table td:last-child { border-right: none; }
+    .saju-col-head { background: #f1f5f9; font-weight: bold; color: #334155; }
+    .saju-char { font-size: 16px; font-weight: bold; display: block; line-height: 1.2; }
+    .saju-target { color: #e11d48 !important; }
+    .saju-meta { padding: 10px 15px; background: #f8fafc; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
+
+    #reportText { margin-top: 15px; white-space: pre-wrap; background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; min-height: 100px; font-size: 14.5px; line-height: 1.85; color: #334155; }
+    #reportText h3 { margin: 24px 0 8px; font-size: 18px; line-height: 1.45; color: #1e293b; }
+    #reportText h4 { margin: 20px 0 7px; font-size: 16px; line-height: 1.5; color: #312e81; }
+    #reportText hr { border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+    #reportText strong { color: #1e293b; font-weight: 750; }
+    #reportText .report-tag { display: inline-block; padding: 2px 7px; margin: 2px 2px 2px 0; border-radius: 999px; background: #eef2ff; color: #4338ca; font-size: 12px; }
+    
+    /* --- 실시간 전환형 로딩 스타일 --- */
+    .loading-container { text-align: center; padding: 25px 15px; background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; }
+    .spinner { width: 44px; height: 44px; margin: 0 auto 14px auto; border: 4px solid #e2e8f0; border-top: 4px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loading-msg { font-size: 15px; font-weight: bold; color: #1e293b; margin-bottom: 6px; }
+    .warning-text { font-size: 12.5px; color: #e11d48; display: block; margin-bottom: 12px; }
+    
+    .loading-help-box { margin-top: 15px; padding: 14px; background: #ffffff; border-radius: 10px; border: 1px dashed #cbd5e1; }
+    .loading-help-desc { font-size: 12.5px; color: #64748b; line-height: 1.5; margin-bottom: 10px; }
+    .chat-btn { display: inline-block; background-color: #fee500; color: #191919; font-size: 13.5px; font-weight: bold; text-decoration: none; padding: 9px 16px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: background-color 0.2s; }
+    .chat-btn:hover { background-color: #fada0a; }
+
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+    .modal-title { font-size: 18px; font-weight: bold; color: #1e293b; margin-bottom: 12px; }
+    
+    .kakaopay-btn { width: 100%; padding: 13px; background-color: #FEE500; color: #191919; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box; }
+    .kakaopay-btn:hover { background-color: #fada0a; }
+
+    .divider { margin: 15px 0; color: #94a3b8; font-size: 12px; display: flex; align-items: center; }
+    .divider::before, .divider::after { content: ""; flex: 1; border-bottom: 1px solid #e2e8f0; }
+    .divider::before { margin-right: 10px; }
+    .divider::after { margin-left: 10px; }
+
+    .bank-info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 10px; text-align: left; }
+    .bank-row { margin-bottom: 6px; font-size: 13px; color: #334155; }
+    .bank-row strong { color: #0f172a; }
+    .btn-copy { width: 100%; padding: 7px; background: #e2e8f0; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; color: #334155; cursor: pointer; margin-top: 5px; }
+    
+    .btn-confirm { width: 100%; padding: 14px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+    .btn-confirm:hover { background: #4338ca; }
+    .btn-close { width: 100%; padding: 8px; background: transparent; border: none; font-size: 13px; color: #64748b; cursor: pointer; margin-top: 5px; }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <h2>🔮 2030 맞춤 AI 사주 진로·고민 리포트</h2>
-      <p class="subtitle">생년월일시와 고민을 입력하시면 AI가 맞춤 솔루션을 분석합니다.</p>
-    </header>
 
-    <!-- 사주 정보 입력 폼 -->
-    <section class="form-section">
-      <div class="form-group">
-        <label for="name">이름 (또는 닉네임)</label>
-        <input type="text" id="name" placeholder="예: 홍길동">
+  <div class="card">
+    <h2>🔮 2030 맞춤 AI 사주 & 궁합 리포트</h2>
+    <div class="subtitle">KASI 정밀 만세력 엔진 연동 · 사이다 성향 팩폭 · 2026 하반기 솔루션</div>
+    
+    <label>1. 리포트 상품 선택</label>
+    <div class="package-group">
+      <div class="package-card" id="pkg-3900" onclick="choosePackage(3900, '1장 핵심 요약본')">
+        <div class="package-info">
+          <div class="package-title">☕ 1장 핵심 요약본</div>
+          <div class="package-desc">성향 팩폭 + 당면 고민 1가지 즉시 진단</div>
+        </div>
+        <div class="package-price">3,900원</div>
       </div>
 
-      <div class="form-group">
-        <label for="gender">성별</label>
-        <select id="gender">
-          <option value="male">남성</option>
-          <option value="female">여성</option>
+      <div class="package-card selected" id="pkg-9900" onclick="choosePackage(9900, '10장 심층 분석 리포트')">
+        <div class="package-info">
+          <div class="package-title">🔥 10장 심층 분석 리포트 <span class="upsell-badge">BEST 추천</span></div>
+          <div class="package-desc">성향 팩폭 + 오행 에너지 + 2026 하반기 월별 흐름 + 재물운</div>
+        </div>
+        <div class="package-price">9,900원</div>
+      </div>
+
+      <div class="package-card" id="pkg-14900" onclick="choosePackage(14900, '15장 올인원 마스터 리포트 (궁합 포함)')">
+        <div class="package-info">
+          <div class="package-title">👑 15장 올인원 마스터 리포트 <span class="upsell-badge">궁합 포함</span></div>
+          <div class="package-desc">성향 팩폭 + 평생 대운 + 남녀 정밀 궁합 팩폭 + 맞춤 개운 비책</div>
+        </div>
+        <div class="package-price">14,900원</div>
+      </div>
+    </div>
+
+    <!-- 2. 본인 생년월일 -->
+    <label>2. [본인] 생년월일 (8자리 숫자 또는 YYYY-MM-DD)</label>
+    <div style="display: flex; gap: 10px;">
+      <input type="text" id="birth" placeholder="예: 19980515 또는 1998-05-15" maxlength="10" oninput="formatBirthDate(this)" style="flex: 2;">
+      <select id="calendarType" style="flex: 1.2;">
+        <option value="양력">양력</option>
+        <option value="음력(평달)" selected>음력(평달)</option>
+        <option value="음력(윤달)">음력(윤달)</option>
+      </select>
+    </div>
+
+    <!-- 3. 본인 태어난 시간 & 성별 -->
+    <label>3. [본인] 태어난 시간 & 성별</label>
+    <div style="display: flex; gap: 10px;">
+      <select id="time" style="flex: 2;">
+        <option value="시간 모름">시간 모름</option>
+        <option value="야자시 23:30~23:59">야자시 23:30~23:59</option>
+        <option value="야자시 00:00~00:29">야자시 00:00~00:29</option>
+        <option value="조자시 00:30~00:59">조자시 00:30~00:59</option>
+        <option value="조자시 01:00~01:29">조자시 01:00~01:29</option>
+        <option value="축시 01:30~03:29">축시 01:30~03:29</option>
+        <option value="인시 03:30~05:29">인시 03:30~05:29</option>
+        <option value="묘시 05:30~07:29">묘시 05:30~07:29</option>
+        <option value="진시 07:30~09:29">진시 07:30~09:29</option>
+        <option value="사시 09:30~11:29">사시 09:30~11:29</option>
+        <option value="오시 11:30~13:29">오시 11:30~13:29</option>
+        <option value="미시 13:30~15:29">미시 13:30~15:29</option>
+        <option value="신시 15:30~17:29">신시 15:30~17:29</option>
+        <option value="유시 17:30~19:29">유시 17:30~19:29</option>
+        <option value="술시 19:30~21:29">술시 19:30~21:29</option>
+        <option value="해시 21:30~23:29">해시 21:30~23:29</option>
+      </select>
+      <select id="gender" style="flex: 1.2;">
+        <option value="여성">여성</option>
+        <option value="남성">남성</option>
+      </select>
+    </div>
+
+    <!-- 상대방 궁합 정보 -->
+    <div id="partnerBox" class="partner-section">
+      <div class="partner-title">💕 [상대방] 정보 입력 (정밀 궁합용)</div>
+      
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="p_birth" placeholder="상대방 생년월일 (예: 19980515)" maxlength="10" oninput="formatBirthDate(this)" style="flex: 2;">
+        <select id="p_calendarType" style="flex: 1.2;">
+          <option value="양력">양력</option>
+          <option value="음력(평달)">음력(평달)</option>
+          <option value="음력(윤달)">음력(윤달)</option>
         </select>
       </div>
 
-      <div class="form-group">
-        <label for="birthDate">생년월일 (8자리)</label>
-        <input type="text" id="birthDate" placeholder="예: 19980515">
-      </div>
-
-      <div class="form-group">
-        <label for="calendarType">양력 / 음력</label>
-        <select id="calendarType">
-          <option value="solar">양력</option>
-          <option value="lunar">음력</option>
+      <div style="display: flex; gap: 10px; margin-top: 6px;">
+        <select id="p_time" style="flex: 2;">
+          <option value="시간 모름">상대방 시간 모름</option>
+          <option value="야자시 23:30~23:59">야자시 23:30~23:59</option>
+          <option value="야자시 00:00~00:29">야자시 00:00~00:29</option>
+          <option value="조자시 00:30~00:59">조자시 00:30~00:59</option>
+          <option value="조자시 01:00~01:29">조자시 01:00~01:29</option>
+          <option value="축시 01:30~03:29">축시 01:30~03:29</option>
+          <option value="인시 03:30~05:29">인시 03:30~05:29</option>
+          <option value="묘시 05:30~07:29">묘시 05:30~07:29</option>
+          <option value="진시 07:30~09:29">진시 07:30~09:29</option>
+          <option value="사시 09:30~11:29">사시 09:30~11:29</option>
+          <option value="오시 11:30~13:29">오시 11:30~13:29</option>
+          <option value="미시 13:30~15:29">미시 13:30~15:29</option>
+          <option value="신시 15:30~17:29">신시 15:30~17:29</option>
+          <option value="유시 17:30~19:29">유시 17:30~19:29</option>
+          <option value="술시 19:30~21:29">술시 19:30~21:29</option>
+          <option value="해시 21:30~23:29">해시 21:30~23:29</option>
+        </select>
+        <select id="p_gender" style="flex: 1.2;">
+          <option value="남성">남성</option>
+          <option value="여성">여성</option>
         </select>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label for="birthTime">태어난 시간</label>
-        <input type="text" id="birthTime" placeholder="예: 14:30 또는 모름">
-      </div>
+    <!-- 4. 고민 입력 -->
+    <label>4. 가장 답답한 고민 1가지</label>
+    <textarea id="concern" rows="2" placeholder="예: 2026 하반기 이직 타이밍과 재물 흐름이 궁금합니다."></textarea>
 
-      <div class="form-group">
-        <label for="worry">가장 궁금한 고민 (이직, 진로, 연애 등)</label>
-        <textarea id="worry" rows="3" placeholder="예: 올해 이직운과 나에게 맞는 직무 방향이 궁금합니다."></textarea>
-      </div>
+    <button id="btnSubmit" class="btn-main" onclick="openPaymentModal()">
+      <span id="btnText">9,900원 결제하고 10장 심층 분석 받기</span>
+    </button>
 
-      <button id="submit-btn" class="submit-btn" onclick="generateReport()">AI 맞춤 리포트 분석 시작하기</button>
-    </section>
-
-    <!-- 로딩 및 대기 안내 영역 (처음에는 숨김) -->
-    <section id="loading-box" style="display: none;">
-      <div class="spinner"></div>
-      <p id="loading-text" class="loading-msg">사주 데이터를 정밀 분석하고 있습니다...</p>
-      <span class="warning-text">※ 정밀 리포트 생성 중이니 창을 닫거나 새로고침하지 마세요.</span>
-
-      <div class="help-box">
-        <p class="help-desc">
-          고품질 맞춤 분석을 위해 보통 <strong>30초~1분 정도 소요</strong>됩니다.<br>
-          네트워크 환경으로 인해 1~2분 이상 화면이 멈출 경우, 아래 1:1 채팅으로 남겨주시면 <strong>검수된 정밀 PDF 리포트</strong>를 즉시 발송해 드립니다.
-        </p>
-        <!-- 실제 오픈채팅 링크로 주소를 변경해주세요 -->
-        <a href="https://open.kakao.com/o/YOUR_LINK" target="_blank" class="chat-btn">
-          💬 1:1 오픈채팅으로 리포트 문의하기
-        </a>
-      </div>
-    </section>
-
-    <!-- 결과 리포트 출력 영역 -->
-    <section id="result-box" class="result-box" style="display: none;"></section>
+    <div id="manseArea"></div>
+    <div id="reportText" style="display: none;"></div>
   </div>
 
-  <script src="script.js"></script>
+  <div id="paymentModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-title">💳 리포트 신청 및 결제 안내</div>
+      <div style="font-size: 13px; color: #64748b;">신청 상품: <strong id="modalPackageName" style="color:#4f46e5;">10장 심층 리포트</strong> (<span id="modalPrice" style="color:#ef4444; font-weight:bold;">9,900원</span>)</div>
+      
+      <a id="kakaopayLink" href="https://qr.kakaopay.com/FLDXJgKZl" target="_blank" class="kakaopay-btn">
+        🟡 카카오페이로 간편 송금하기
+      </a>
+
+      <div class="divider">또는 일반 계좌이체</div>
+
+      <div class="bank-info-box">
+        <div class="bank-row">🏦 은행: <strong>신한은행</strong></div>
+        <div class="bank-row">🔢 계좌: <strong id="accNum">110-169-041758</strong></div>
+        <div class="bank-row">👤 예금주: <strong>김찬중</strong></div>
+        <button class="btn-copy" onclick="copyAccount()">📋 계좌번호 복사하기</button>
+      </div>
+
+      <div style="font-size: 11px; color: #64748b; margin-top: 10px;">
+        * 송금 완료 후 아래 버튼을 누르시면 리포트 작성이 시작됩니다.
+      </div>
+
+      <button class="btn-confirm" onclick="startAnalysisAfterPayment()">송금 완료 (리포트 즉시 생성)</button>
+      <button class="btn-close" onclick="closePaymentModal()">닫기</button>
+    </div>
+  </div>
+
+  <script>
+    const GEMINI_API_KEY = "AQ.Ab8RN6LgWXawWdW49ePOrJNXnxsBu326jNKSRV09rqsU8OmEcg";
+    const KAKAOPAY_URL = "https://qr.kakaopay.com/FLDXJgKZl"; 
+
+    let currentPrice = 9900;
+    let currentPackageName = "10장 심층 분석 리포트";
+    let loadingTimer = null;
+
+    function formatBirthDate(input) {
+      var val = input.value.replace(/[^0-9]/g, '');
+      if (val.length > 4 && val.length <= 6) {
+        input.value = val.slice(0, 4) + '-' + val.slice(4);
+      } else if (val.length > 6) {
+        input.value = val.slice(0, 4) + '-' + val.slice(4, 6) + '-' + val.slice(6, 8);
+      } else {
+        input.value = val;
+      }
+    }
+
+    const HAN_MAP = {
+      "甲": "갑(甲)", "乙": "을(乙)", "丙": "병(丙)", "丁": "정(丁)", "戊": "무(戊)",
+      "己": "기(己)", "庚": "경(庚)", "辛": "신(辛)", "壬": "임(壬)", "癸": "계(癸)",
+      "子": "자(子)", "丑": "축(丑)", "寅": "인(寅)", "卯": "묘(卯)", "辰": "진(辰)",
+      "巳": "사(巳)", "午": "오(午)", "未": "미(未)", "申": "신(申)", "酉": "유(酉)",
+      "戌": "술(戌)", "亥": "해(亥)"
+    };
+
+    function toHan(c) {
+      return HAN_MAP[c] || c;
+    }
+
+    function getPreciseManseryeok(birthStr, calendarType, timeStr) {
+      var clean = birthStr.replace(/[^0-9]/g, '');
+      if (clean.length < 8) return null;
+      var y = parseInt(clean.substring(0,4), 10);
+      var m = parseInt(clean.substring(4,6), 10);
+      var d = parseInt(clean.substring(6,8), 10);
+
+      var lunar = null;
+      var solar = null;
+
+      if (calendarType.indexOf("음력") !== -1) {
+        var isLeap = calendarType.indexOf("윤달") !== -1;
+        lunar = Lunar.fromYmd(y, isLeap ? -m : m, d);
+        solar = lunar.getSolar();
+      } else {
+        solar = Solar.fromYmd(y, m, d);
+        lunar = solar.getLunar();
+      }
+
+      var eightChar = lunar.getEightChar();
+      
+      var yGan = toHan(eightChar.getYearGan());
+      var yJi = toHan(eightChar.getYearZhi());
+      var mGan = toHan(eightChar.getMonthGan());
+      var mJi = toHan(eightChar.getMonthZhi());
+      var dGan = toHan(eightChar.getDayGan());
+      var dJi = toHan(eightChar.getDayZhi());
+
+      var hourPillar = "시간 모름";
+      var hGanStr = "-", hJiStr = "-";
+      if (timeStr && timeStr !== "시간 모름") {
+        var hourMap = {
+          "야자시 23:30~23:59": 23, "야자시 00:00~00:29": 0, "조자시 00:30~00:59": 0, "조자시 01:00~01:29": 1,
+          "축시 01:30~03:29": 2, "인시 03:30~05:29": 4, "묘시 05:30~07:29": 6, "진시 07:30~09:29": 8,
+          "사시 09:30~11:29": 10, "오시 11:30~13:29": 12, "미시 13:30~15:29": 14, "신시 15:30~17:29": 16,
+          "유시 17:30~19:29": 18, "술시 19:30~21:29": 20, "해시 21:30~23:29": 22
+        };
+        var h = hourMap[timeStr] !== undefined ? hourMap[timeStr] : 0;
+        var sTime = Solar.fromYmdHms(solar.getYear(), solar.getMonth(), solar.getDay(), h, 0, 0);
+        var ecTime = sTime.getLunar().getEightChar();
+        hGanStr = toHan(ecTime.getTimeGan());
+        hJiStr = toHan(ecTime.getTimeZhi());
+        hourPillar = hGanStr + " " + hJiStr;
+      }
+
+      return {
+        yGan: yGan, yJi: yJi,
+        mGan: mGan, mJi: mJi,
+        dGan: dGan, dJi: dJi,
+        hGan: hGanStr, hJi: hJiStr,
+        hourPillar: hourPillar,
+        dateFormatted: y + "년 " + m + "월 " + d + "일 (" + calendarType + ") [양력 " + solar.getYear() + "-" + solar.getMonth() + "-" + solar.getDay() + "]"
+      };
+    }
+
+    function renderSajuTableHTML(u, title) {
+      return '<div class="saju-table-wrap">' +
+        '<div class="saju-header">🔮 ' + title + ' 정밀 만세력 사주 원국표</div>' +
+        '<table class="saju-table">' +
+          '<thead><tr><th>구분</th><th>시주(時柱)</th><th style="color:#e11d48; background:#fff1f2;">일주(日柱) · 본인</th><th>월주(月柱)</th><th>년주(年柱)</th></tr></thead>' +
+          '<tbody>' +
+            '<tr><td class="saju-col-head">천간(天干)</td><td><span class="saju-char">' + u.hGan + '</span></td><td style="background:#fff1f2;"><span class="saju-char saju-target">' + u.dGan + '</span></td><td><span class="saju-char">' + u.mGan + '</span></td><td><span class="saju-char">' + u.yGan + '</span></td></tr>' +
+            '<tr><td class="saju-col-head">지지(地支)</td><td><span class="saju-char">' + u.hJi + '</span></td><td style="background:#fff1f2;"><span class="saju-char saju-target">' + u.dJi + '</span></td><td><span class="saju-char">' + u.mJi + '</span></td><td><span class="saju-char">' + u.yJi + '</span></td></tr>' +
+          '</tbody>' +
+        '</table>' +
+        '<div class="saju-meta">📌 기준일: ' + u.dateFormatted + ' / KASI 절기·표준시 정밀 보정 완료</div>' +
+      '</div>';
+    }
+
+    function choosePackage(price, name) {
+      currentPrice = price;
+      currentPackageName = name;
+
+      var cards = document.querySelectorAll('.package-card');
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].classList.remove('selected');
+      }
+      var target = document.getElementById('pkg-' + price);
+      if (target) {
+        target.classList.add('selected');
+      }
+
+      var partnerBox = document.getElementById('partnerBox');
+      if (price === 14900) {
+        partnerBox.style.display = 'block';
+      } else {
+        partnerBox.style.display = 'none';
+      }
+
+      var btnText = document.getElementById('btnText');
+      var shortTitle = name.split(' ')[0];
+      btnText.innerText = price.toLocaleString() + "원 결제하고 " + shortTitle + " 받기";
+    }
+
+    function openPaymentModal() {
+      var birth = document.getElementById('birth').value;
+      if (!birth) {
+        alert("생년월일을 먼저 입력해 주세요!");
+        return;
+      }
+      document.getElementById('modalPackageName').innerText = currentPackageName;
+      document.getElementById('modalPrice').innerText = currentPrice.toLocaleString() + "원";
+      document.getElementById('paymentModal').style.display = 'flex';
+    }
+
+    function closePaymentModal() {
+      document.getElementById('paymentModal').style.display = 'none';
+    }
+
+    function copyAccount() {
+      var acc = "110-169-041758";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(acc).then(function() {
+          alert("신한은행 계좌번호가 복사되었습니다!\n" + acc);
+        }).catch(function() {
+          alert("계좌번호: " + acc);
+        });
+      } else {
+        alert("계좌번호: " + acc);
+      }
+    }
+
+    function startAnalysisAfterPayment() {
+      closePaymentModal();
+      runSajuAnalysis();
+    }
+
+    async function callGeminiWithFallback(prompt) {
+      var models = ["gemini-3.6-flash"];
+      var lastError = new Error("Gemini API에서 응답을 받지 못했습니다.");
+      
+      for (var m = 0; m < models.length; m++) {
+        var model = models[m];
+        for (var attempt = 0; attempt < 3; attempt++) {
+          try {
+            var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + GEMINI_API_KEY, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                  maxOutputTokens: 8192,
+                  temperature: 0.7
+                }
+              })
+            });
+            
+            var data = await response.json();
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+              return data.candidates[0].content.parts[0].text;
+            }
+            
+            if (data.error && (data.error.code === 503 || data.error.code === 429)) {
+              lastError = new Error("[" + data.error.code + "] " + (data.error.message || "일시적인 사용량 제한"));
+              await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+              continue;
+            }
+            if (data.error) {
+              lastError = new Error("[" + (data.error.code || response.status) + "] " + (data.error.message || "API 요청 실패") + " (모델: " + model + ")");
+              break;
+            }
+            lastError = new Error("[" + response.status + "] AI 응답 본문이 비어 있습니다. (모델: " + model + ")");
+          } catch (e) {
+            lastError = new Error("네트워크 연결 실패: " + (e && e.message ? e.message : "알 수 없는 오류"));
+            await new Promise(function(resolve) { setTimeout(resolve, 1500); });
+          }
+        }
+      }
+      throw lastError;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderReportText(text) {
+      var safe = escapeHtml(text);
+      safe = safe.replace(/^###\s+(.+)$/gm, "<h4>$1</h4>");
+      safe = safe.replace(/^##\s+(.+)$/gm, "<h3>$1</h3>");
+      safe = safe.replace(/^---+$/gm, "<hr>");
+      safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      safe = safe.replace(/`([^`]+)`/g, '<span class="report-tag">$1</span>');
+      safe = safe.replace(/\n/g, "<br>");
+      return safe;
+    }
+
+    async function runSajuAnalysis() {
+      var birth = document.getElementById('birth').value;
+      var calendarType = document.getElementById('calendarType').value;
+      var time = document.getElementById('time').value;
+      var gender = document.getElementById('gender').value;
+      var concern = document.getElementById('concern').value;
+
+      var p_birth = document.getElementById('p_birth').value;
+      var p_calendarType = document.getElementById('p_calendarType').value;
+      var p_time = document.getElementById('p_time').value;
+      var p_gender = document.getElementById('p_gender').value;
+
+      var manseArea = document.getElementById('manseArea');
+      var reportText = document.getElementById('reportText');
+      var btn = document.getElementById('btnSubmit');
+
+      if (GEMINI_API_KEY.indexOf("여기에") !== -1) {
+        alert("코드 안의 GEMINI_API_KEY 부분에 발급받은 API 키를 넣어주세요!");
+        return;
+      }
+
+      var userManse = getPreciseManseryeok(birth, calendarType, time);
+      if (!userManse) {
+        alert("생년월일을 8자리 숫자(예: 19980515)로 올바르게 입력해 주세요!");
+        return;
+      }
+
+      var partnerManse = null;
+      if (currentPrice === 14900 && p_birth) {
+        partnerManse = getPreciseManseryeok(p_birth, p_calendarType, p_time);
+      }
+
+      // 사주 원국 표 출력
+      var tableHtml = renderSajuTableHTML(userManse, "본인");
+      if (partnerManse) {
+        tableHtml += renderSajuTableHTML(partnerManse, "상대방");
+      }
+      manseArea.innerHTML = tableHtml;
+
+      // 동적 순차 안내 문구 설정
+      var dynamicMessages = [
+        "입력하신 KASI 정밀 만세력 사주 원국을 분석 중입니다...",
+        "2030 세대 맞춤 진로·대운 및 성향 팩폭을 정리하고 있습니다...",
+        "[" + currentPackageName + "] 핵심 솔루션과 조언을 도출하는 중입니다...",
+        "거의 다 완성되었습니다. 깔끔한 심층 리포트로 출력하고 있습니다..."
+      ];
+      var msgIdx = 0;
+
+      reportText.style.display = 'block';
+      reportText.innerHTML = 
+        '<div class="loading-container">' +
+          '<div class="spinner"></div>' +
+          '<p id="dynLoadingMsg" class="loading-msg">' + dynamicMessages[0] + '</p>' +
+          '<span class="warning-text">※ 정밀 리포트 작성 중이니 화면을 새로고침하거나 닫지 마세요.</span>' +
+          '<div class="loading-help-box">' +
+            '<p class="loading-help-desc">' +
+              '고품질 맞춤 분석을 위해 보통 <strong>15~30초 정도 소요</strong>됩니다.<br>' +
+              '통신 환경으로 인해 1~2분 이상 화면이 멈출 경우, 아래 1:1 채팅으로 남겨주시면 <strong>검수된 정밀 PDF 리포트</strong>를 즉시 발송해 드립니다.' +
+            '</p>' +
+            '<a href="https://open.kakao.com/o/spyOxaLi" target="_blank" class="chat-btn">' +
+              '💬 1:1 오픈채팅으로 리포트 문의하기' +
+            '</a>' +
+          '</div>' +
+        '</div>';
+
+      if (loadingTimer) clearInterval(loadingTimer);
+      loadingTimer = setInterval(function() {
+        msgIdx = (msgIdx + 1) % dynamicMessages.length;
+        var dynEl = document.getElementById('dynLoadingMsg');
+        if (dynEl) dynEl.innerText = dynamicMessages[msgIdx];
+      }, 3500);
+
+      btn.disabled = true;
+
+      var detailedInstructions = "";
+      if (currentPrice === 3900) {
+        detailedInstructions = "\n[작성 필수 항목: 1장 핵심 요약본]\n1. [내 사주 캐릭터]: 본성을 상징하는 직관적 닉네임 및 #해시태그 2개\n2. [뼈 때리는 성향 팩폭]: 겉모습 vs 속마음, 남들은 모르는 나의 핵심 기질 2~3가지\n3. [고민 맞춤 해결 가이드]: 고객 고민(" + concern + ")에 대한 2026 하반기 구체적 실행 타이밍\n4. [오늘의 실전 행동 팁]: 오늘부터 당장 실천할 수 있는 1가지 조언";
+      } else if (currentPrice === 9900) {
+        detailedInstructions = "\n[작성 필수 항목: 10장 심층 분석 리포트]\n1. [내 사주 캐릭터 & 핵심 기질]: 나를 대표하는 키워드와 성격 요약\n2. [사이다 성향 팩폭]: 겉으로 보이는 이미지 vs 속마음, 인간관계 취약점\n3. [오행 에너지 진단]: 나에게 넘치는 기운 vs 부족해서 채워야 할 기운\n4. [포텐 터지는 직무 환경]: 남 밑에서 일할 때 vs 내가 주도할 때 역량 비교\n5. [고민 집중 해결 & 2026 하반기 월별 타이밍]: 고민(" + concern + ") 집중 진단, 2026년 9월~12월 월별 운의 흐름\n6. [2027 정미년 상반기 예고]: 내년 이동수 및 기회 요인\n7. [돈을 부르는 재물·커리어 솔루션]: 내 돈주머니를 채워주는 실전 행동 수칙";
+      } else {
+        detailedInstructions = "\n[작성 필수 항목: 15장 올인원 마스터 리포트 & 남녀 정밀 궁합]\n1. [각자의 본성 & 성향 팩폭]: 본인 vs 상대방 기질\n2. [오행 조화도 & 에너지 결합]: 서로에게 부족한 기운을 채워주는지 (상생 vs 상극)\n3. [남녀 정밀 궁합 팩폭 (겉궁합 & 속궁합)]: 대화 방식, 가치관 충돌 지점, 끌림의 강도\n4. [갈등 예방 & 관계 유지 비책]: 싸울 때 먼저 물러서야 할 사람, 서로를 다루는 꿀팁\n5. [평생 대운 흐름 & 황금기 로드맵]: 본인 대운 흐름 및 고민(" + concern + ") 종결 솔루션\n6. [2026 하반기~2027 정미년 신수]: 두 사람의 관계 운 및 본인의 커리어/재물 흐름\n7. [맞춤 개운(開運) 솔루션]: 행운의 숫자, 방향, 공간 팁";
+      }
+
+      var mansePromptData = "\n[확정 사주 원국]\n- 본인: 년주 [" + userManse.yGan + " " + userManse.yJi + "] / 월주 [" + userManse.mGan + " " + userManse.mJi + "] / 일주 [" + userManse.dGan + " " + userManse.dJi + "] / 시주 [" + userManse.hourPillar + "]\n";
+      if (partnerManse) {
+        mansePromptData += "- 상대방: 년주 [" + partnerManse.yGan + " " + partnerManse.yJi + "] / 월주 [" + partnerManse.mGan + " " + partnerManse.mJi + "] / 일주 [" + partnerManse.dGan + " " + partnerManse.dJi + "] / 시주 [" + partnerManse.hourPillar + "]\n";
+      }
+
+      var promptText = "너는 2030 세대를 전문으로 상담하는 대한민국 최고 권위의 정통 명리학 컨설턴트야.\n[현재 기준 시점: 2026년 8월]\n" +
+        mansePromptData +
+        "- 당면 고민: " + concern + "\n\n" +
+        "[작성 규칙]\n" +
+        "1. 상단에 정밀 표가 이미 렌더링되므로 텍스트 표(+---+ 등)를 생성하지 말고 곧바로 본문으로 시작할 것.\n" +
+        "2. 위 [확정 사주 원국]의 일간/일지 및 오행 구성을 100% 기준으로 삼아 명리학적으로 완벽하게 해석할 것.\n" +
+        "3. 현재는 2026년 8월이므로 2026년 9월~12월 및 2027년(정미년) 이후의 흐름만 서술할 것.\n" +
+        "4. 가독성을 위해 단락을 깔끔하게 나누고 중요 결론은 **볼드** 처리할 것.\n" +
+        detailedInstructions;
+
+      try {
+        var resultText = await callGeminiWithFallback(promptText);
+        if (loadingTimer) clearInterval(loadingTimer);
+        reportText.innerHTML = renderReportText(resultText);
+      } catch (err) {
+        if (loadingTimer) clearInterval(loadingTimer);
+        console.error("Gemini API test error:", err);
+        var safeErrorMessage = escapeHtml(err && err.message ? err.message : "알 수 없는 오류");
+        reportText.innerHTML = '<div style="background:#fee2e2; border:1px solid #f87171; padding:18px; border-radius:12px; color:#991b1b; line-height:1.7;">' +
+          '<strong>⚠️ 네트워크 통신 지연으로 리포트 생성에 실패했습니다.</strong><br>' +
+          '<span style="font-size:13px;">입력하신 사주 데이터는 안전하게 보관되어 있습니다. 아래 1:1 채팅으로 문의 주시면 <strong>검수된 정밀 PDF 리포트</strong>를 즉시 발송해 드립니다.</span>' +
+          '<div style="margin-top:12px;">' +
+            '<a href="https://open.kakao.com/o/spyOxaLi" target="_blank" class="chat-btn">' +
+              '💬 1:1 오픈채팅으로 PDF 리포트 요청하기' +
+            '</a>' +
+          '</div>' +
+        '</div>';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
 </body>
 </html>
