@@ -234,8 +234,7 @@
   </div>
 
   <script>
-    // API 키는 공개 코드에 저장하지 않습니다. Vercel 서버 환경변수로 연결합니다.
-    const GEMINI_API_KEY = "";
+    // Gemini 요청은 /api/gemini 비공개 서버를 통해 처리합니다.
     const KAKAOPAY_URL = "https://qr.kakaopay.com/FLDXJgKZl"; 
 
     let currentPrice = 9900;
@@ -400,16 +399,10 @@
         var model = models[m];
         for (var attempt = 0; attempt < 3; attempt++) {
           try {
-            var response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + GEMINI_API_KEY, {
+            var response = await fetch("/api/gemini", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                  maxOutputTokens: 8192,
-                  temperature: 0.7
-                }
-              })
+              body: JSON.stringify({ prompt: prompt })
             });
             
             var data = await response.json();
